@@ -78,7 +78,7 @@ end
 
 local GUI = Mercury:Create{
    Title = "Slap Royale",
-   Name = "Legit Slap Royale Hun",
+   Name = "Legit Slap Royale Hub",
    Size = UDim2.fromOffset(600, 375),
    Theme = Mercury.Themes.Dark,
    Link = "legitsrhub"
@@ -659,4 +659,5 @@ for _, v in ipairs(game.CoreGui:GetChildren()) do
            end
        end
    end
+
 end

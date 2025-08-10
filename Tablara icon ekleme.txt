@@ -1,0 +1,662 @@
+﻿local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local GuiService = game:GetService("GuiService")
+
+local localPlayer = Players.LocalPlayer
+local localCharacter = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+
+if not game:IsLoaded() then
+   game.Loaded:Wait()
+end
+GuiService:ClearError()
+
+local Mercury = loadstring(game:HttpGet("https://raw.githubusercontent.com/Guy-that-exists/mercury-lib-edit/master/src.lua"))()
+
+local function cleanupGameObjects()
+   local objectsToDestroy = {
+       ReplicatedStorage:FindFirstChild("Ban"),
+       ReplicatedStorage:FindFirstChild("GRAB"),
+       ReplicatedStorage.Events:FindFirstChild("AdminGUI"),
+       ReplicatedStorage.Events:FindFirstChild("Ban"),
+       ReplicatedStorage.Events:FindFirstChild("WS"),
+       ReplicatedStorage.Events:FindFirstChild("WS2"),
+   }
+   for _, obj in ipairs(objectsToDestroy) do
+       if obj then
+           obj:Destroy()
+       end
+   end
+end
+cleanupGameObjects()
+
+local function setupAntiVoid()
+   if not Workspace:FindFirstChild("AntiVoid") then
+       local antiVoid = Instance.new("Part", Workspace)
+       antiVoid.Position = Vector3.new(0, -35, -150)
+       antiVoid.Name = "AntiVoid"
+       antiVoid.Anchored = true
+       antiVoid.CanCollide = false
+       antiVoid.Size = Vector3.new(2048, 16, 2048)
+       antiVoid.Transparency = 0
+       antiVoid.Material = Enum.Material.ForceField
+       
+       local mesh = Instance.new("SpecialMesh", antiVoid)
+       mesh.TextureId = "rbxassetid://5101923607"
+       mesh.Scale = Vector3.new(2048, 16, 2048)
+   end
+end
+setupAntiVoid()
+
+local codeMap = {
+   ["http://www.roblox.com/asset/?id=9648769161"] = "4",
+   ["http://www.roblox.com/asset/?id=9648765536"] = "2",
+   ["http://www.roblox.com/asset/?id=9648762863"] = "3",
+   ["http://www.roblox.com/asset/?id=9648759883"] = "9",
+   ["http://www.roblox.com/asset/?id=9648755440"] = "8",
+   ["http://www.roblox.com/asset/?id=9648752438"] = "2",
+   ["http://www.roblox.com/asset/?id=9648749145"] = "8",
+   ["http://www.roblox.com/asset/?id=9648745618"] = "3",
+   ["http://www.roblox.com/asset/?id=9648742013"] = "7",
+   ["http://www.roblox.com/asset/?id=9648738553"] = "8",
+   ["http://www.roblox.com/asset/?id=9648734698"] = "2",
+   ["http://www.roblox.com/asset/?id=9648730082"] = "6",
+   ["http://www.roblox.com/asset/?id=9648723237"] = "3",
+   ["http://www.roblox.com/asset/?id=9648718450"] = "6",
+   ["http://www.roblox.com/asset/?id=9648715920"] = "6",
+   ["http://www.roblox.com/asset/?id=9648712563"] = "2",
+}
+
+local bunkerCode = {}
+local codeBrick = Workspace.Map:WaitForChild("CodeBrick")
+for _, v in ipairs(codeBrick.SurfaceGui:GetChildren()) do
+   if v.Name == "IMGTemplate" and codeMap[v.Image] then
+       table.insert(bunkerCode, codeMap[v.Image])
+   end
+end
+
+local GUI = Mercury:Create{
+   Title = "Slap Royale",
+   Name = "Legit Slap Royale Hun",
+   Size = UDim2.fromOffset(600, 375),
+   Theme = Mercury.Themes.Dark,
+   Link = "legitsrhub"
+}
+
+local Tabs = {
+   Combat = GUI:Tab{Name = "Combat"},
+   Protection = GUI:Tab{Name = "Protection"},
+   Badges = GUI:Tab{Name = "Badges"},
+   Gloves = GUI:Tab{Name = "Gloves"},
+   Misc = GUI:Tab{Name = "Miscellaneous"},
+   Player = GUI:Tab{Name = "Player"},
+}
+
+local slapAuraEnabled = false
+local statESPEnabled = false
+local autoGetAllItemEnabled = false
+local autoUseItemEnabled = false
+local antiIceEnabled = false
+local antiVoidEnabled = false
+local antiRagdollEnabled = false
+local safeModeEnabled = false
+local itemESPEnabled = false
+local stormVFXEnabled = false
+local keepWalkspeedEnabled = false
+local keepJumppowerEnabled = false
+
+local walkspeedValue = 20
+local jumppowerValue = 50
+
+Tabs.Combat:Toggle{
+   Name = "Slap Aura",
+   StartingState = false,
+   Description = "Auto Slaps People",
+   Callback = function(value)
+       slapAuraEnabled = value
+       if slapAuraEnabled then
+           task.spawn(function()
+               while slapAuraEnabled do
+                   local character = localPlayer.Character
+                   if not character then task.wait() continue end
+                   local humanoid = character:FindFirstChildOfClass("Humanoid")
+                   local hrp = character:FindFirstChild("HumanoidRootPart")
+                   local inMatch = character:FindFirstChild("inMatch")
+
+                   if not humanoid or not hrp or not inMatch or inMatch.Value ~= true then
+                       task.wait()
+                       continue
+                   end
+
+                   local reachAura = humanoid.Health > 30 and 9 or 12
+
+                   for _, player in ipairs(Players:GetPlayers()) do
+                       if player ~= localPlayer and player.Character then
+                           local targetChar = player.Character
+                           local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+                           local targetInMatch = targetChar:FindFirstChild("inMatch")
+                           local isDead = targetChar:FindFirstChild("Dead")
+
+                           if targetHRP and targetInMatch and targetInMatch.Value == true and not isDead then
+                               local distance = (hrp.Position - targetHRP.Position).Magnitude
+                               if distance <= reachAura then
+                                   ReplicatedStorage.Events.Slap:FireServer(targetHRP)
+                               end
+                           end
+                       end
+                   end
+                   task.wait()
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Combat:Toggle{
+   Name = "Stat ESP",
+   StartingState = false,
+   Description = "Shows the glove players are using, and their power above their heads.",
+   Callback = function(value)
+       statESPEnabled = value
+       for _, player in ipairs(Players:GetChildren()) do
+           if player.Character and player.Character.Head:FindFirstChild("StatEsp") then
+               player.Character.Head.StatEsp:Destroy()
+           end
+       end
+
+       if statESPEnabled then
+           RunService.Heartbeat:Connect(function()
+               if not statESPEnabled then return end
+               for _, player in ipairs(Players:GetChildren()) do
+                   if player ~= localPlayer and player.Character and player.Character.Head then
+                       local head = player.Character.Head
+                       local isDead = player.Character:FindFirstChild("Dead")
+                       local statEsp = head:FindFirstChild("StatEsp")
+
+                       if isDead then
+                           if statEsp then statEsp:Destroy() end
+                       elseif not statEsp then
+                           statEsp = Instance.new("BillboardGui", head)
+                           statEsp.Name = "StatEsp"
+                           statEsp.Size = UDim2.new(0, 100, 0, 150)
+                           statEsp.AlwaysOnTop = true
+                           statEsp.StudsOffset = Vector3.new(0, -1, 0)
+
+                           local textLabel = Instance.new("TextLabel", statEsp)
+                           textLabel.BackgroundTransparency = 1
+                           textLabel.Size = UDim2.new(0, 100, 0, 100)
+                           textLabel.TextSize = 20
+                           textLabel.Font = Enum.Font.SourceSansSemibold
+                           textLabel.TextColor3 = Color3.new(1, 1, 1)
+                           textLabel.TextStrokeTransparency = 0
+                           textLabel.TextYAlignment = Enum.TextYAlignment.Center
+                           
+                           textLabel.Text = ("Glove: %s | Power: %d"):format(
+                               player:FindFirstChild("Glove") and player.Glove.Value or "N/A",
+                               player.Character:FindFirstChild("Power") and player.Character.Power.Value or 0
+                           )
+                       else
+                           local textLabel = statEsp:FindFirstChildOfClass("TextLabel")
+                           if textLabel then
+                               textLabel.Text = ("Glove: %s | Power: %d"):format(
+                                   player:FindFirstChild("Glove") and player.Glove.Value or "N/A",
+                                   player.Character:FindFirstChild("Power") and player.Character.Power.Value or 0
+                               )
+                           end
+                       end
+                   end
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Combat:Toggle{
+   Name = "Auto Get All Items",
+   StartingState = false,
+   Description = "Slowly Gets All Items",
+   Callback = function(value)
+       autoGetAllItemEnabled = value
+       if autoGetAllItemEnabled then
+           task.spawn(function()
+               while autoGetAllItemEnabled do
+                   local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+                   if character and character:FindFirstChild("inMatch") and character.inMatch.Value == true then
+                       for _, item in ipairs(Workspace.Items:GetChildren()) do
+                           if not autoGetAllItemEnabled then break end
+                           if item:IsA("Tool") and item:FindFirstChild("Handle") then
+                               item.Handle.CFrame = character.HumanoidRootPart.CFrame
+                               item.Handle.Anchored = false
+                               
+                               character.Humanoid:EquipTool(item)
+                               character.Humanoid:UnequipTools()
+                               task.wait(0.5)
+                           end
+                       end
+                   end
+                   task.wait()
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Combat:Toggle{
+   Name = "Auto Use Items",
+   StartingState = false,
+   Description = "Automaticly Uses All Items",
+   Callback = function(value)
+       autoUseItemEnabled = value
+       if autoUseItemEnabled then
+           task.spawn(function()
+               while autoUseItemEnabled do
+                   local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+                   if character then
+                       for _, tool in ipairs(character:GetChildren()) do
+                           if not autoUseItemEnabled then break end
+                           if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
+                               tool:Activate()
+                               task.wait(0.5)
+                           end
+                       end
+                   end
+                   task.wait()
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Combat:Button{
+   Name = "Get Out Of Bus Early",
+   Description = "Makes you jump out of bus early.",
+   Callback = function()
+       ReplicatedStorage.Events.BusJumping:FireServer()
+       local playerGui = localPlayer:WaitForChild("PlayerGui")
+       local prompt = playerGui:FindFirstChild("JumpPrompt")
+       if prompt then
+           prompt:Destroy()
+       end
+   end
+}
+
+Tabs.Protection:Toggle{
+   Name = "Anti Acid",
+   StartingState = false,
+   Description = "Stops acid from killing you.",
+   Callback = function(value)
+       for _, acidPart in ipairs(Workspace.Map.AcidAbnormality:GetChildren()) do
+           if acidPart.Name == "Acid" and acidPart:IsA("Part") then
+               acidPart.CanTouch = not value
+               acidPart.CanCollide = value
+           end
+       end
+   end
+}
+
+Tabs.Protection:Toggle{
+   Name = "Anti Ice",
+   StartingState = false,
+   Description = "Stops ice abilities from affecting you.",
+   Callback = function(value)
+       antiIceEnabled = value
+       if antiIceEnabled then
+           RunService.Heartbeat:Connect(function()
+               if not antiIceEnabled then return end
+               local character = localPlayer.Character
+               if not character then return end
+               for _, v in ipairs(character:GetChildren()) do
+                   if v.Name == "Icecube" then
+                       v:Destroy()
+                       if character.Humanoid then
+                           character.Humanoid.PlatformStand = false
+                           character.Humanoid.AutoRotate = true
+                       end
+                   end
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Protection:Toggle{
+   Name = "Anti Lava",
+   StartingState = false,
+   Description = "Stops lava from killing you.",
+   Callback = function(value)
+       local lava = Workspace.Map.DragonDepths.Lava
+       lava.CanTouch = not value
+       lava.CanCollide = value
+   end
+}
+
+Tabs.Protection:Toggle{
+   Name = "Anti Void",
+   StartingState = false,
+   Description = "Stops you from falling into the void.",
+   Callback = function(value)
+       antiVoidEnabled = value
+       local antiVoidPart = Workspace.AntiVoid
+       if antiVoidPart then
+           antiVoidPart.CanCollide = antiVoidEnabled
+           antiVoidPart.Transparency = antiVoidEnabled and 0.75 or 1
+       end
+   end
+}
+
+local antiRagdollConnection = nil
+Tabs.Protection:Toggle{
+   Name = "Anti Ragdoll",
+   StartingState = false,
+   Description = "Breaks Ragdoll Functions",
+   Callback = function(value)
+       antiRagdollEnabled = value
+       if antiRagdollEnabled then
+           antiRagdollConnection = RunService.Heartbeat:Connect(function()
+               local character = localPlayer.Character
+               if character and character:FindFirstChild("Ragdolled") and character.Ragdolled.Value == true then
+                   local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                   if humanoidRootPart and humanoidRootPart.Anchored == false then
+                       humanoidRootPart.Anchored = true
+                       task.spawn(function()
+                           repeat task.wait() until not character.Ragdolled.Value
+                           if humanoidRootPart then
+                               humanoidRootPart.Anchored = false
+                           end
+                       end)
+                   end
+               end
+           end)
+       else
+           if antiRagdollConnection then
+               antiRagdollConnection:Disconnect()
+               antiRagdollConnection = nil
+           end
+       end
+   end
+}
+
+local safeModeConnection = nil
+Tabs.Protection:Toggle{
+   Name = "Safe Mode",
+   StartingState = false,
+   Description = "If your hp under 30 you will start running.",
+   Callback = function(state)
+       safeModeEnabled = state
+       local character = localPlayer.Character
+       if not character then return end
+       local humanoid = character:FindFirstChildOfClass("Humanoid")
+       if not humanoid then return end
+
+       if safeModeEnabled then
+           safeModeConnection = RunService.Heartbeat:Connect(function()
+               if not safeModeEnabled then return end
+               if humanoid then
+                   humanoid.WalkSpeed = humanoid.Health < 30 and 24 or 20
+               else
+                   safeModeConnection:Disconnect()
+                   safeModeConnection = nil
+               end
+           end)
+       else
+           if safeModeConnection then
+               safeModeConnection:Disconnect()
+               safeModeConnection = nil
+           end
+           humanoid.WalkSpeed = walkspeedValue
+       end
+   end
+}
+
+Tabs.Badges:Button{
+   Name = "Get Bunker Code",
+   Description = 'Tells you the code needed to open the bunker door.',
+   Callback = function()
+       GUI:Notification{
+           Title = "Code",
+           Text = table.concat(bunkerCode),
+           Duration = 3,
+           Callback = function() end
+       }
+   end
+}
+
+Tabs.Badges:Button{
+   Name = "Get Chain",
+   Description = 'Gives you the "THE ACCIDENT" badge.',
+   Callback = function()
+       GUI:Prompt{
+           Followup = false,
+           Title = "Get Chain",
+           Text = "This prevent other players from getting the badge.",
+           Buttons = {
+               Yes = function()
+                   local keypadButtons = Workspace.Map.OriginOffice.Door.Keypad.Buttons
+                   fireclickdetector(keypadButtons.Reset.ClickDetector)
+                   task.wait(0.3)
+                   for i = 1, #bunkerCode do
+                       fireclickdetector(keypadButtons[bunkerCode[i]].ClickDetector)
+                       task.wait(0.3)
+                   end
+                   fireclickdetector(keypadButtons.Enter.ClickDetector)
+               end,
+               No = function() end
+           }
+       }
+   end
+}
+
+local itemESPConnection = nil
+Tabs.Misc:Toggle{
+   Name = "Item ESP",
+   StartingState = false,
+   Description = "Shows the location of every item in the map.",
+   Callback = function(value)
+       itemESPEnabled = value
+       for _, item in ipairs(Workspace.Items:GetChildren()) do
+           if item.Handle and item.Handle:FindFirstChild("ItemEsp") then
+               item.Handle.ItemEsp:Destroy()
+           end
+       end
+
+       if itemESPEnabled then
+           itemESPConnection = RunService.Heartbeat:Connect(function()
+               if not itemESPEnabled then return end
+               for _, item in ipairs(Workspace.Items:GetChildren()) do
+                   if item.Handle and not item.Handle:FindFirstChild("ItemEsp") then
+                       local itemEsp = Instance.new("BillboardGui", item.Handle)
+                       itemEsp.Name = "ItemEsp"
+                       itemEsp.Size = UDim2.new(0, 100, 0, 150)
+                       itemEsp.AlwaysOnTop = true
+                       itemEsp.StudsOffset = Vector3.new(0, -1, 0)
+
+                       local textLabel = Instance.new("TextLabel", itemEsp)
+                       textLabel.BackgroundTransparency = 1
+                       textLabel.Size = UDim2.new(0, 100, 0, 100)
+                       textLabel.TextSize = 15
+                       textLabel.Font = Enum.Font.SourceSansSemibold
+                       textLabel.TextColor3 = Color3.new(1, 1, 1)
+                       textLabel.TextStrokeTransparency = 0
+                       textLabel.TextYAlignment = Enum.TextYAlignment.Center
+                       textLabel.Text = item.Name
+                   end
+               end
+           end)
+       else
+           if itemESPConnection then
+               itemESPConnection:Disconnect()
+               itemESPConnection = nil
+           end
+       end
+   end
+}
+
+local stormVFXConnection = nil
+Tabs.Misc:Toggle{
+   Name = "Disable Storm VFX",
+   StartingState = false,
+   Description = "Disables the visual effects of being in the storm.",
+   Callback = function(value)
+       stormVFXEnabled = value
+       if stormVFXEnabled then
+           stormVFXConnection = RunService.Heartbeat:Connect(function()
+               if not stormVFXEnabled then return end
+               local character = localPlayer.Character
+               if character and character:FindFirstChild("inZone") and character.inZone.Value == true then
+                   character.inZone.Value = false
+               end
+           end)
+       else
+           if stormVFXConnection then
+               stormVFXConnection:Disconnect()
+               stormVFXConnection = nil
+           end
+       end
+   end
+}
+
+Tabs.Misc:Button{
+   Name = "Free Animation Pack",
+   Description = "Lets you use the emotes in the Animation Pack gamepass for free.",
+   Callback = function()
+       local animPackLoaded = false
+       if not animPackLoaded then
+           animPackLoaded = true
+           local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+           local humanoid = character:FindFirstChildOfClass("Humanoid")
+           if not humanoid then return end
+
+           local function stopEmotes()
+               for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+                   if track.Animation and track.Animation.Parent == ReplicatedStorage.AnimationPack then
+                       track:Stop()
+                   end
+               end
+           end
+
+           local emotes = {}
+           local animFolder = ReplicatedStorage.AnimationPack
+           if animFolder then
+               for _, anim in ipairs(animFolder:GetChildren()) do
+                   if anim:IsA("Animation") then
+                       emotes[anim.Name:lower()] = humanoid:LoadAnimation(anim)
+                   end
+               end
+           end
+
+           localPlayer.Chatted:Connect(function(msg)
+               local command, emoteName = msg:lower():match("^/e%s+(%a+)$")
+               if command and emotes[emoteName] then
+                   stopEmotes()
+                   emotes[emoteName]:Play()
+                   if emoteName == "laugh" then
+                       ReplicatedStorage.Events.AnimationSound:FireServer("LAUGH")
+                   end
+               end
+           end)
+
+           RunService.RenderStepped:Connect(function()
+               if humanoid.MoveDirection.Magnitude > 0 then
+                   stopEmotes()
+               end
+           end)
+       end
+   end
+}
+
+Tabs.Misc:Button{
+   Name = "Infinite Yield",
+   Description = "Loads Infinite Yield, a well-known command line script. This may cause issues.",
+   Callback = function()
+       loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+   end
+}
+
+Tabs.Player:Slider{
+   Name = "Walkspeed",
+   Description = "Changes how fast you walk.",
+   Default = 20,
+   Min = 20,
+   Max = 1000,
+   Callback = function(value)
+       walkspeedValue = value
+       local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+       if humanoid then
+           humanoid.WalkSpeed = walkspeedValue
+       end
+   end
+}
+
+local keepWalkspeedConnection = nil
+Tabs.Player:Toggle{
+   Name = "Keep Walkspeed",
+   StartingState = false,
+   Description = "Doesn't let your walkspeed get changed.",
+   Callback = function(value)
+       keepWalkspeedEnabled = value
+       if keepWalkspeedEnabled then
+           keepWalkspeedConnection = RunService.Heartbeat:Connect(function()
+               local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+               if humanoid and humanoid.WalkSpeed ~= walkspeedValue then
+                   humanoid.WalkSpeed = walkspeedValue
+               end
+           end)
+       else
+           if keepWalkspeedConnection then
+               keepWalkspeedConnection:Disconnect()
+               keepWalkspeedConnection = nil
+           end
+       end
+   end
+}
+
+Tabs.Player:Slider{
+   Name = "Jumppower",
+   Description = "Changes how high you jump.",
+   Default = 50,
+   Min = 50,
+   Max = 1000,
+   Callback = function(value)
+       jumppowerValue = value
+       local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+       if humanoid then
+           humanoid.JumpPower = jumppowerValue
+       end
+   end
+}
+
+local keepJumppowerConnection = nil
+Tabs.Player:Toggle{
+   Name = "Keep Jumppower",
+   StartingState = false,
+   Description = "Doesn't let your jumppower get changed.",
+   Callback = function(value)
+       keepJumppowerEnabled = value
+       if keepJumppowerEnabled then
+           keepJumppowerConnection = RunService.Heartbeat:Connect(function()
+               local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+               if humanoid and humanoid.JumpPower ~= jumppowerValue then
+                   humanoid.JumpPower = jumppowerValue
+               end
+           end)
+       else
+           if keepJumppowerConnection then
+               keepJumppowerConnection:Disconnect()
+               keepJumppowerConnection = nil
+           end
+       end
+   end
+}
+
+for _, v in ipairs(game.CoreGui:GetChildren()) do
+   if v.Name == "Mercury" then
+       for _, c in ipairs(v:GetDescendants()) do
+           if c:IsA("Frame") or c:IsA("TextButton") then
+               if c.BackgroundTransparency ~= 1 then
+                   c.BackgroundTransparency = 0.5
+               end
+           end
+       end
+   end
+end
